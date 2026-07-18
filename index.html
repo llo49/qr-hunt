@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR CODE HUNT ห้องสมุด</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: radial-gradient(circle, #0f172a, #000);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 450px;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-sizing: border-box;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        h2 {
+            color: #a78bfa;
+            margin-top: 0;
+            text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+        }
+        
+        input, button {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        input {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        button {
+            background: #7c3aed;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
+        }
+
+        button:hover {
+            background: #6d28d9;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .choice-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            text-align: left;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .choice-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(167, 139, 250, 0.5);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .menu-btn {
+            background: #1e293b;
+            border: 1px solid #475569;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 20px;
+            margin: 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .menu-btn:hover {
+            background: #2d3748;
+            border-color: #a78bfa;
+            color: #a78bfa;
+        }
+        
+        .correct { 
+            background: #22c55e !important; 
+            font-weight: bold;
+            box-shadow: 0 0 15px #22c55e;
+            animation: pop 0.3s ease;
+        }
+        .wrong { 
+            background: #ef4444 !important; 
+            font-weight: bold;
+            box-shadow: 0 0 15px #ef4444;
+        }
+        
+        .shake {
+            animation: shakeEffect 0.4s ease;
+        }
+
+        @keyframes shakeEffect {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        
+        #question-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        /* กล่องครอบภาพแบบส่องวงกลมเจาะจงเฉพาะจุด */
+        .food-img-container {
+            width: 100%;
+            height: 250px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
+        }
+
+        .food-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            clip-path: circle(25% at 50% 50%);
+        }
+
+        /* ซูมรูปภาพที่อยู่ในเครื่อง */
+        .zoom-somtum { object-position: 50% 45%; transform: scale(1.6); }
+        .zoom-bingsu { object-position: 50% 20%; transform: scale(1.7); }
+        .zoom-padthai { object-position: 58% 38%; transform: scale(1.6); }
+        .zoom-takoyaki { object-position: 50% 50%; transform: scale(1.5); }
+        .zoom-ramen { object-position: 63% 28%; transform: scale(1.6); }
+
+        #score-screen h3 {
+            font-size: 35px;
+            color: #facc15;
+            margin: 10px 0;
+            text-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
+        }
+
+        #flash-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.15s ease-out;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background-color: #f00;
+            pointer-events: none;
+            z-index: 999;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(105vh) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="flash-overlay"></div>
+
+<div class="container" id="main-card">
+    <!-- หน้าแรก -->
+    <div id="name-screen">
+        <h2>📚 QR CODE HUNT</h2>
+        <p>กรุณากรอกชื่อของคุณเพื่อเข้าสู่ภารกิจ</p>
+        <input type="text" id="playerName" placeholder="พิมพ์ชื่อของคุณที่นี่..." autocomplete="off">
+        <button onclick="goToMenu()">ถัดไป</button>
+    </div>
+
+    <!-- หน้าเลือกหมวดหมู่ -->
+    <div id="menu-screen" style="display: none;">
+        <h2>เลือกรหัสหมวดหมู่</h2>
+        <p>คลิกเลือกหมวดที่คุณสแกนเจอ</p>
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="selectMode('A')">หมวด A</button>
+            <button class="menu-btn" onclick="selectMode('B')">หมวด B</button>
+            <button class="menu-btn" onclick="selectMode('C')">หมวด C</button>
+            <button class="menu-btn" onclick="selectMode('D')">หมวด D</button>
+            <button class="menu-btn" onclick="selectMode('E')">หมวด E</button>
+            <button class="menu-btn" onclick="selectMode('F')">หมวด F</button>
+        </div>
+    </div>
+
+    <!-- หน้าเล่นเกม -->
+    <div id="game-screen" style="display: none;">
+        <div id="progress" style="text-align: right; color: #a78bfa; font-size: 14px; margin-bottom: 10px;">ข้อที่ 1/5</div>
+        <div id="food-media-placeholder"></div>
+        <div id="question-text">คำถามจะขึ้นตรงนี้</div>
+        <div id="choices-box"></div>
+    </div>
+
+    <!-- หน้าสรุปคะแนน -->
+    <div id="score-screen" style="display: none;">
+        <h2>🎉 จบภารกิจ! 🎉</h2>
+        <p id="thank-you-msg">เก่งมากคุณผู้เล่น</p>
+        <p>คะแนนที่คุณได้</p>
+        <h3 id="final-score">0 / 5</h3>
+        <button onclick="location.reload()">กลับไปหน้าแรก</button>
+    </div>
+</div>
+
+<script>
+/* ดึงรูปจากในเครื่องเหมือนเดิม */
+const foodImages = {
+    somtum: "somtum.jpg",
+    bingsu: "bingsu.jpg",
+    padthai: "padthai.jpg",
+    takoyaki: "takoyaki.jpg",
+    ramen: "ramen.jpg"
+};
+
+/* ================= คลังข้อมูลคำถามทั้งหมด ================= */
+const allQuestionPools = {
+    A: [
+        { q: "คำราชาศัพท์ของคำว่า 'กิน' สำหรับพระมหากษัตริย์คืออะไร?", c: ["เสวย", "รับประทาน", "ฉัน", "ทาน"], a: 0 },
+        { q: "คำราชาศัพท์ของคำว่า 'นอน' คืออะไร?", c: ["บรรทม", "จำวัด", "จำศีล", "พักผ่อน"], a: 0 },
+        { q: "คำราชาศัพท์ของคำว่า 'ไหว้' คืออะไร?", c: ["ทรงกราบ", "นมัสการ", "ทรงประนมมือ", "ถวายบังคม"], a: 2 },
+        { q: "คำว่า 'พระหัตถ์' หมายถึงอวัยวะส่วนใด?", c: ["มือ", "เท้า", "หัว", "ตา"], a: 0 },
+        { q: "คำว่า 'พระเนตร' หมายถึงอวัยวะส่วนใด?", c: ["ตา", "หู", "จมูก", "ปาก"], a: 0 }
+    ],
+    B: [
+        { 
+            q: "จากรูปภาพจริงที่เจาะส่องให้ดูนี้ มันคืออาหารไทยชนิดใด?", 
+            c: ["ส้มตำ", "ตำซั่ว", "ซุปหน่อไม้", "ยำมะม่วง"], 
+            a: 0, 
+            img: foodImages.somtum, 
+            zoomClass: "zoom-somtum" 
+        },
+        { 
+            q: "ของหวานหวานเย็นสไตล์เกาหลีในภาพจริงนี้เรียกว่าอะไร?", 
+            c: ["น้ำแข็งใสถั่วแดง", "ไอศกรีมซันเด", "บิงซูสตรอเบอร์รี่", "ฮันนี่โทสต์"], 
+            a: 2, 
+            img: foodImages.bingsu, 
+            zoomClass: "zoom-bingsu" 
+        },
+        { 
+            q: "เมนูเส้นระดับ Global ของไทยในภาพจานนี้คืออะไร?", 
+            c: ["ผัดซีอิ๊ว", "ก๋วยเตี๋ยวคั่วไก่", "ผัดไทยกุ้งสด", "เส้นหมี่ผัดกระเฉด"], 
+            a: 2, 
+            img: foodImages.padthai, 
+            zoomClass: "zoom-padthai" 
+        },
+        { 
+            q: "สตรีทฟู้ดญี่ปุ่นทรงกลมราดซอสฉ่ำๆ ในจานนี้คืออะไร?", 
+            c: ["โอโคโนมิยากิ", "ทาโกยากิ", "ขนมครกญี่ปุ่น", "ยากิโทริ"], 
+            a: 1, 
+            img: foodImages.takoyaki, 
+            zoomClass: "zoom-takoyaki" 
+        },
+        { 
+            q: "เมนูน้ำซุปร้อนๆ ที่กำลังใช้ตะเกียบคีบเส้นขึ้นมานี้คืออะไร?", 
+            c: ["อุด้งน้ำ", "เย็นตาโฟ", "ราเมง", "ก๋วยเตี๋ยวน้ำใส"], 
+            a: 2, 
+            img: foodImages.ramen, 
+            zoomClass: "zoom-ramen" 
+        }
+    ],
+    C: [
+        { q: "ข้อใดจัดว่าเป็น 'คำกริยา' ทั้งหมด?", c: ["วิ่ง, กระโดด, นอน", "โรงเรียน, แมว, โต๊ะ", "สวย, รวดเร็ว, สูง", "ฉัน, เธอ, มัน"], a: 0 },
+        { q: "ในประโยค 'น้องร้องเพลงเสียงดัง' คำใดคือคำกริยา?", c: ["น้อง", "ร้องเพลง", "เสียง", "ดัง"], a: 1 },
+        { q: "คำกริยาในข้อใดแสดงอาการเคลื่อนที่?", c: ["นั่ง", "นอน", "เดิน", "คิด"], a: 2 },
+        { q: "ข้อใดไม่ใช่คำกริยา?", c: ["หัวเราะ", "ดินสอ", "ว่ายน้ำ", "บิน"], a: 1 },
+        { q: "คำกริยาคำใดหมายถึงการทำความสะอาด?", c: ["กวาด", "กิน", "เรียน", "คุย"], a: 0 }
+    ],
+    D: [
+        { q: "1. พี่เปเป้มีนามสกุลอย่างไร", c: ["โชติผนัส", "โชคติพนัส", "โชติพนัส", "โชคพนัส"], a: 2 },
+        { q: "2. พี่มีมี่เป็นดีเจชื่อว่าอะไร", c: ["ดีเจปลากระป๋อง", "ดีเจปลาทูน่า", "ดีเจเมวี่", "ไม่รู้"], a: 0 },
+        { q: "3. นามสกุลของพี่มีมี่คืออะไร", c: ["บัวทวน", "บัวบาน", "บัวอวน", "บัวฮวน"], a: 0 },
+        { q: "4. ชื่อจริงของพี่ใบตองคืออะไร", c: ["หทัยรัตน์", "ภาคิน", "ปภาวี", "สุกัญญา"], a: 0 },
+        { q: "5. ใครชื่อ ภาคิน", c: ["พี่เปเป้", "พี่ใบตอง", "พี่มีมี่", "ครูอิ๋ว"], a: 0 }
+    ],
+    E: [
+        { q: "1. ชื่อจริงของครูเอ็กซ์คืออะไร", c: ["คักรนันทน์", "ศักรนันทน์", "ศักรนันน์", "ศักรนันทน"], a: 1 },
+        { q: "2. นามสกุลของครูปุณคืออะไร", c: ["ปันยาววรรณรักษ์", "ปัญญาวรรณลักษ์", "ปัญญาวรรณรักษ์", "ปัญญาวรรณรัก"], a: 2 },
+        { q: "3. ชื่อจริงของครูนุ้ยคืออะไร", c: ["นางถิรดา สารธิ", "นางสาวถิรดา สาธิ", "นางสาวถิรดา สารธิ", "นางถิรดา สาธิ"], a: 2 },
+        { q: "4. ครูสายรุ้งมีชื่อเล่นว่าอะไร", c: ["ครูสายรุ้ง", "ครูจี๋", "ครูอุดเงิน", "ครูรุ้ง"], a: 1 },
+        { q: "5. ชื่อจริงของครูอิ๋วคืออะไร", c: ["นางภัทร์นฤน", "นางสาวภัทร์ณฤน", "นางภัทร์ณฤน", "นางสาวภัทร์นฤน"], a: 0 }
+    ],
+    F: [
+        { q: "1. ข้อใดจัดว่าเป็น 'คำนาม' ที่ใช้เรียกชื่อคน สัตว์ สิ่งของ หรือสถานที่?", c: ["กระเป๋า, สุนัข, โรงเรียน", "เดิน, วิ่ง, นั่ง", "หอม, หวาน, ใหญ่", "และ, แต่, หรือ"], a: 0 },
+        { q: "2. คำนามในข้อใดจัดว่าเป็น 'สามานยนาม' (คำนามทั่วไป ไม่เจาะจง)?", c: ["จังหวัดน่าน", "ประเทศสิงคโปร์", "โรงพยาบาล", "เด็กชายสมชาย"], a: 2 },
+        { q: "3. คำสรรพนามบุรุษที่ 1 ใช้แทนตัวผู้พูดคือคำใด?", c: ["เธอ", "ท่าน", "กระผม/ดิฉัน", "เขา"], a: 2 },
+        { q: "4. ระบบการจัดหมวดหมู่หนังสือในห้องสมุดโรงเรียนที่นิยมใช้กันมากที่สุดคือระบบใด?", c: ["ระบบทศนิยมของดิวอี้", "ระบบรัฐสภาอเมริกัน", "ระบบแอลซี", "ระบบตามใจชอบ"], a: 0 },
+        { q: "5. มารยาทที่สำคัญที่สุดในการเข้าใช้ห้องสมุดคือข้อใด?", c: ["คุยโทรศัพท์เสียงดัง", "ไม่ส่งเสียงดังรบกวนผู้อื่น", "นำขนมขบเคี้ยวเข้ามารับประทาน", "วิ่งเล่นซ่อนแอบ"], a: 1 }
+    ]
+};
+
+let currentMode = 'A'; 
+let currentIdx = 0;
+let totalScore = 0;
+let pName = "";
+
+/* ================= FX FUNCTION ================= */
+function triggerFlash(color) {
+    const flash = document.getElementById("flash-overlay");
+    flash.style.backgroundColor = color;
+    flash.style.opacity = "0.3";
+    setTimeout(() => { flash.style.opacity = "0"; }, 150);
+}
+
+function spawnConfetti(count) {
+    const colors = ['#facc15', '#22c55e', '#38bdf8', '#ec4899', '#a78bfa'];
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement("div");
+        p.className = "confetti";
+        p.style.left = Math.random() * 100 + "vw";
+        p.style.top = "-10px";
+        p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        p.style.transform = `scale(${Math.random() * 1.5 + 0.5})`;
+        p.style.animationDuration = (Math.random() * 2 + 2) + "s";
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 4000);
+    }
+}
+
+/* ================= NAVIGATION ================= */
+function goToMenu() {
+    pName = document.getElementById("playerName").value.trim();
+    if (pName === "") {
+        alert("กรุณาใส่ชื่อของคุณก่อนเริ่มเกมนะครับ!");
+        return;
+    }
+    document.getElementById("name-screen").style.display = "none";
+    document.getElementById("menu-screen").style.display = "block";
+}
+
+function selectMode(mode) {
+    currentMode = mode;
+    currentIdx = 0;
+    totalScore = 0;
+    document.getElementById("menu-screen").style.display = "none";
+    document.getElementById("game-screen").style.display = "block";
+    renderQuestion();
+}
+
+function renderQuestion() {
+    const modeData = allQuestionPools[currentMode];
+    const qData = modeData[currentIdx];
+    
+    document.getElementById("progress").innerText = `หมวด ${currentMode} | ข้อที่ ${currentIdx + 1} / ${modeData.length}`;
+    
+    const mediaBox = document.getElementById("food-media-placeholder");
+    mediaBox.innerHTML = "";
+    if (qData.img) {
+        const imgDiv = document.createElement("div");
+        imgDiv.className = "food-img-container";
+        imgDiv.innerHTML = `<img src="${qData.img}" class="food-img ${qData.zoomClass || ''}" alt="food">`;
+        mediaBox.appendChild(imgDiv);
+    }
+
+    document.getElementById("question-text").innerText = qData.q;
+    
+    const choicesBox = document.getElementById("choices-box");
+    choicesBox.innerHTML = "";
+    
+    qData.c.forEach((choiceText, index) => {
+        const btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.innerText = `${index + 1}. ${choiceText}`;
+        btn.onclick = () => checkAnswer(index, btn);
+        choicesBox.appendChild(btn);
+    });
+}
+
+function checkAnswer(chosenIdx, clickedBtn) {
+    const modeData = allQuestionPools[currentMode];
+    const qData = modeData[currentIdx];
+    const allButtons = document.querySelectorAll(".choice-btn");
+    const mainCard = document.getElementById("main-card");
+    
+    allButtons.forEach(btn => btn.disabled = true);
+    
+    if (chosenIdx === qData.a) {
+        clickedBtn.classList.add("correct");
+        triggerFlash("#22c55e");
+        spawnConfetti(25);
+        totalScore++;
+    } else {
+        clickedBtn.classList.add("wrong");
+        allButtons[qData.a].classList.add("correct");
+        triggerFlash("#ef4444");
+        mainCard.classList.add("shake");
+        setTimeout(() => mainCard.classList.remove("shake"), 400);
+    }
+    
+    setTimeout(() => {
+        currentIdx++;
+        if (currentIdx < modeData.length) {
+            renderQuestion();
+        } else {
+            showEndScreen();
+        }
+    }, 1500);
+}
+
+function showEndScreen() {
+    const modeData = allQuestionPools[currentMode];
+    document.getElementById("game-screen").style.display = "none";
+    document.getElementById("score-screen").style.display = "block";
+    
+    document.getElementById("thank-you-msg").innerText = `ยินดีด้วยคุณ "${pName}" ทำภารกิจหมวด ${currentMode} เสร็จสิ้น!`;
+    document.getElementById("final-score").innerText = `${totalScore} / ${modeData.length}`;
+    
+    let interval = setInterval(() => spawnConfetti(15), 200);
+    setTimeout(() => clearInterval(interval), 2000);
+}
+</script>
+
+</body>
+</html>
