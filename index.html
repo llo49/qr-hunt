@@ -338,6 +338,12 @@ let currentIdx = 0;
 let totalScore = 0;
 let pName = "";
 
+/* ฟังก์ชันตัวช่วยดึงค่าพารามิเตอร์จาก URL (เช่น ?mode=F) */
+function getUrlParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
 /* ================= FX FUNCTION ================= */
 function triggerFlash(color) {
     const flash = document.getElementById("flash-overlay");
@@ -369,7 +375,16 @@ function goToMenu() {
         return;
     }
     document.getElementById("name-screen").style.display = "none";
-    document.getElementById("menu-screen").style.display = "block";
+    
+    // 🛑 แก้บั๊กตรงนี้: เช็กก่อนว่ามีโหมดแฝงมากับลิงก์ไหม
+    const urlMode = getUrlParam("mode");
+    if (urlMode && allQuestionPools[urlMode.toUpperCase()]) {
+        // ถ้ามีโหมดตรงกับคลังคำถาม ให้กระโดดข้ามไปเล่นโหมดนั้นทันที!
+        selectMode(urlMode.toUpperCase());
+    } else {
+        // ถ้าไม่มีโหมดแฝงมา ให้เปิดหน้าเมนูให้เลือกเองตามปกติ
+        document.getElementById("menu-screen").style.display = "block";
+    }
 }
 
 function selectMode(mode) {
